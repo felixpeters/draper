@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_ResponseCode(t *testing.T) {
@@ -17,9 +20,7 @@ func Test_ResponseCode(t *testing.T) {
 
 	exp := 200
 	act := res.Code
-	if exp != act {
-		t.Fatalf("Expected response code to be %d, but got %d", exp, act)
-	}
+	assert.Equal(t, exp, act, "Response code should be 200")
 }
 
 func Test_HelloWorld(t *testing.T) {
@@ -33,7 +34,23 @@ func Test_HelloWorld(t *testing.T) {
 
 	exp := "Hello World"
 	act := res.Body.String()
-	if exp != act {
-		t.Fatalf("Expected %s, but got %s", exp, act)
+	assert.Equal(t, exp, act, "Response should be Hello World")
+}
+
+func Test_JsonHelloWorld(t *testing.T) {
+	req, err := http.NewRequest("GET", "localhost:8080/json", nil)
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	res := httptest.NewRecorder()
+	JsonHelloWorld(res, req)
+
+	assert.Equal(t, 200, res.Code, "Response code should be 200")
+	assert.JSONEq(t, `{ "success": true, "message": "Hello World" }`, res.Body.String(), "Response body should be JSON")
+
+	var sr SimpleResponse
+	json.NewDecoder(res.Body).Decode(&sr)
+	assert.True(t, sr.Success, "Success value should be true")
+	assert.Equal(t, "Hello World", sr.Message, "Message should be Hello World")
 }
