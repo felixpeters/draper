@@ -16,10 +16,13 @@ type SimpleResponse struct {
 	Message string `json:"message"`
 }
 
-var (
-	w      = log.NewSyncWriter(os.Stdout)
-	logger = log.NewJSONLogger(w)
-)
+var logger log.Logger
+
+func init() {
+
+	logger = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
+	logger = log.NewContext(logger).With("ts", log.DefaultTimestamp, "caller", log.DefaultCaller)
+}
 
 func loggingHandler(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
@@ -70,9 +73,9 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	logger.Log("message", "Server started on port 8080")
+	logger.Log("info", "Server started on port 8080")
 	err := srv.ListenAndServe()
 	if err != nil {
-		logger.Log("err", err, "message", "Server start failed")
+		logger.Log("error", err, "message", "Server start failed")
 	}
 }
