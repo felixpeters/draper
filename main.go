@@ -4,11 +4,46 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
+	"time"
+
+	log "github.com/go-kit/kit/log"
+	"github.com/gorilla/mux"
 )
 
 type SimpleResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
+}
+
+var (
+	w      = log.NewSyncWriter(os.Stdout)
+	logger = log.NewJSONLogger(w)
+)
+
+func loggingHandler(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		t1 := time.Now()
+		next.ServeHTTP(w, r)
+		t2 := time.Now()
+		logger.Log("method", r.Method, "url", r.URL.String(), "responseTime", t2.Sub(t1))
+	}
+
+	return http.HandlerFunc(fn)
+}
+
+func recoverHandler(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				logger.Log("panic", err)
+				http.Error(w, http.StatusText(500), 500)
+			}
+		}()
+		next.ServeHTTP(w, r)
+	}
+
+	return http.HandlerFunc(fn)
 }
 
 func JsonHelloWorld(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +57,22 @@ func HelloWorld(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", HelloWorld)
-	http.HandleFunc("/json", JsonHelloWorld)
-	http.ListenAndServe(":8080", nil)
+
+	r := mux.NewRouter()
+	r.HandleFunc("/", HelloWorld)
+	r.HandleFunc("/json", JsonHelloWorld)
+	loggedRouter := loggingHandler(recoverHandler(r))
+
+	srv := &http.Server{
+		Handler:      loggedRouter,
+		Addr:         "127.0.0.1:8080",
+		WriteTimeout: 15 * time.Second,
+		ReadTimeout:  15 * time.Second,
+	}
+
+	logger.Log("message", "Server started on port 8080")
+	err := srv.ListenAndServe()
+	if err != nil {
+		logger.Log("err", err, "message", "Server start failed")
+	}
 }
