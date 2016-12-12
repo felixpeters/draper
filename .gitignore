@@ -14,6 +14,9 @@ _test
 vendor/
 glide.lock
 
+# Confidential information
+certs/
+
 # Architecture specific extensions/prefixes
 *.[568vq]
 [568vq].out

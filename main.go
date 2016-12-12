@@ -49,6 +49,10 @@ func recoverHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func redirectToHttps(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "https://127.0.0.1:8081"+r.RequestURI, http.StatusMovedPermanently)
+}
+
 func JsonHelloWorld(w http.ResponseWriter, r *http.Request) {
 	response := SimpleResponse{true, "Hello World"}
 	w.Header().Set("Content-Type", "application/json")
@@ -68,14 +72,13 @@ func main() {
 
 	srv := &http.Server{
 		Handler:      loggedRouter,
-		Addr:         "127.0.0.1:8080",
+		Addr:         "127.0.0.1:8081",
 		WriteTimeout: 15 * time.Second,
 		ReadTimeout:  15 * time.Second,
 	}
 
-	logger.Log("info", "Server started on port 8080")
-	err := srv.ListenAndServe()
-	if err != nil {
-		logger.Log("error", err, "message", "Server start failed")
-	}
+	logger.Log("info", "HTTPS server started on port 8081")
+	go srv.ListenAndServeTLS("certs/cert.pem", "certs/key.pem")
+
+	http.ListenAndServe(":8080", http.HandlerFunc(redirectToHttps))
 }
