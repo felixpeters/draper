@@ -12,6 +12,7 @@ _test
 
 # Vendor directory
 vendor/
+glide.lock
 
 # Architecture specific extensions/prefixes
 *.[568vq]
