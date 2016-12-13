@@ -16,6 +16,7 @@ glide.lock
 
 # Confidential information
 certs/
+config/
 
 # Architecture specific extensions/prefixes
 *.[568vq]

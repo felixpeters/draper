@@ -1,13 +1,10 @@
 # Get latest official Go image
-FROM golang:latest
-# Create app folder
-RUN mkdir /app
+FROM golang
 # Add project files to folder
-ADD . /app
-# Set working directory to app folder
-WORKDIR /app
-# Build the app binary
-RUN go build -o draper .
-# Run the app binary
-CMD ["/app/draper"]
-
+ADD . /go/src/github.com/felixpeters/draper 
+# Install the app
+RUN go install github.com/felixpeters/draper
+# Run the binary
+ENTRYPOINT /go/bin/draper
+# Expose port 8080
+EXPOSE 8080
