@@ -16,6 +16,10 @@ type SimpleResponse struct {
 	Message string `json:"message"`
 }
 
+type RequestLogger interface {
+	Log(method string, url string, duration int, code int, size int)
+}
+
 type loggingHandler struct {
 	logger  log.Logger
 	handler http.Handler
